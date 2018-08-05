@@ -1,0 +1,307 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	
+	<title>Audio Player</title>
+	
+	<link rel="stylesheet" href="https://utinka.github.io/materialdesignlib.github.io/css/font.css" type="text/css" />
+	<link rel="stylesheet" href="https://utinka.github.io/materialdesignlib.github.io/css/icons.css" type="text/css" />
+		
+	<link rel="stylesheet" href="style.css">
+	
+	<script type="text/javascript" src="jquery.js"></script> 
+
+</head>
+    <body>
+		<div class="AudioPlayerBox">
+			<div class="fixed">
+				<div class="image"></div>
+				<div class="info">
+					<label></label>
+					<text>00:00 - 00:00</text>
+				</div>
+				<div class="controls">
+					<div class="bar">
+						<div class="loaded"></div>
+						<div class="current"></div>
+					</div>
+				</div>
+			</div>
+			<div class="PlayList">
+				<button>Refresh</button>
+				
+			</div>
+			<div class="bottom_controls">
+				<a class="bc_back"><i class="material-icons">skip_previous</i></a>
+				<a class="bc_play_pause"><i class="material-icons">play_arrow</i></a>
+				<a class="bc_next"><i class="material-icons">skip_next</i></a>
+				<a class="bc_repeat" style="float:right;"><i class="material-icons">repeat_one</i></a>
+			</div>
+		</div>
+	</body>
+	<script>
+	var AudioPlayer = [new Audio(''), false, false], AudioPlayList = [], AudioPlayListCount = 0, AudioPlayID, AudioPlayListPlaying, time_end = '';
+	//
+	window.onload = function() 
+	{
+		LoadPlayList();
+	}
+	
+	$('.AudioPlayerBox').find('.PlayList').find('button').click(function()
+	{
+		LoadPlayList();
+	});
+	
+	function LoadPlayList()
+	{
+		$.ajax(
+		{
+			url: "audios.php",
+			success: function(data)
+			{
+				// clear
+				AudioPlayList = [];
+				$('.AudioPlayerBox').find('.PlayList').find('a').remove();
+				// load 
+				var result = data;
+				AudioPlayList = result.split('(:)');
+				console.log(AudioPlayList);
+				for(var apl in AudioPlayList)
+				{
+					if(AudioPlayList[apl] != '') 
+					{
+						var label = AudioPlayList[apl];
+						label = label.replace('audios/',"");
+						label = label.replace('.mp3',"");
+						AudioPlayList[apl] = "http://test18.ru/Audio/" + AudioPlayList[apl];
+						
+						// Add In Play List
+						$('.AudioPlayerBox').find('.PlayList').append('<a><i class="material-icons" audioid="'+apl+'" music="'+AudioPlayList[apl]+'" info="'+label+'">play_arrow</i><label>'+label+'</label></a>');
+					}
+					//console.log(AudioPlayList[apl] + ' - ' + label);
+					$('.AudioPlayerBox .PlayList').find('a').find('i').click(function(e)
+					{
+						if(AudioPlayListPlaying != undefined)
+						{
+							AudioPlayListPlaying.css({
+								'color':'#ffffff',
+								'background':'#000000'
+							});
+							AudioPlayListPlaying.text('play_arrow');
+						}	
+						AudioPlayListPlaying = $(this);
+						var url = $(this).attr('music');
+						var info = $(this).attr('info');
+						var audioID = $(this).attr('audioid');
+						APPlayUrl(url, info, audioID);
+						$(this).css({
+							'color':'#000000',
+							'background':'rgb(206, 206, 206)'
+						});
+						$(this).text('pause');
+					});
+				}
+				AudioPlayListCount = AudioPlayList.length-1;
+			}
+		});
+	}
+	// Player
+	$('.AudioPlayerBox .bottom_controls').find('.bc_play_pause').click(function(e)
+	{
+		if(AudioPlayer[0].src != '')
+		{
+			if(AudioPlayer[2] == false)
+			{
+				AudioPlayer[2] = true;
+				AudioPlayer[0].play();
+				$('.AudioPlayerBox .bottom_controls').find('.bc_play_pause').find('i').text('pause');
+				AudioPlayListPlaying.text('pause');
+				AudioPlayListPlaying.css({ 'color':'#000000','background':'rgb(206, 206, 206)' });
+				$('.AudioPlayerBox .bottom_controls').find('.bc_play_pause').css({
+					'background': '#000000',
+					'color': '#ffffff'
+				});
+			}
+			else
+			{
+				AudioPlayer[0].pause();
+				AudioPlayer[2] = false;
+				$('.AudioPlayerBox .bottom_controls').find('.bc_play_pause').find('i').text('play_arrow');
+				AudioPlayListPlaying.text('play_arrow');
+				AudioPlayListPlaying.css({ 'color':'#ffffff', 'background':'#000000' });
+				$('.AudioPlayerBox .bottom_controls').find('.bc_play_pause').css({
+					'background': 'rgba(0, 0, 0, 0.2)',
+					'color': '#000000'
+				});
+			}
+		}
+	});
+	$('.AudioPlayerBox .bottom_controls').find('.bc_repeat').click(function(e)
+	{
+		if(AudioPlayer[1] == false)
+		{
+			AudioPlayer[1] = true;
+			$(this).css({
+				'background': '#000000',
+				'color': '#ffffff'
+			});
+		}
+		else
+		{
+			AudioPlayer[1] = false;
+			$(this).css({
+				'background': 'rgba(0, 0, 0, 0.2)',
+				'color': '#000000'
+			});
+		}
+	});
+	// Audio skip
+	// back
+	$('.AudioPlayerBox .bottom_controls').find('.bc_back').click(function(e)
+	{
+		var aid = AudioPlayID;
+		aid--;
+		if(aid != -1)
+		{
+			AudioPlayListPlaying.css({ 'color':'#ffffff', 'background':'#000000' });
+			AudioPlayListPlaying.text('play_arrow');
+			//
+			var NextBlock = $('.AudioPlayerBox .PlayList').find('a').find('i[audioid="'+aid+'"]');
+			AudioPlayListPlaying = NextBlock;
+			var url = NextBlock.attr('music');
+			var info = NextBlock.attr('info');
+			var audioID = NextBlock.attr('audioid');
+			APPlayUrl(url, info, audioID);
+			//
+			AudioPlayListPlaying.css({
+				'background': 'rgba(0, 0, 0, 0.2)',
+				'color': '#000000'
+			});
+			AudioPlayListPlaying.text('pause');
+			// scroll down
+			var top = $('body,html').scrollTop();
+			var nextScroll = AudioPlayListPlaying.offset().top-80;
+			$('body,html').animate({ scrollTop:nextScroll }, '500');
+		}
+	});
+	// next
+	$('.AudioPlayerBox .bottom_controls').find('.bc_next').click(function(e)
+	{
+		var aid = AudioPlayID;
+		aid++;
+		if(aid != AudioPlayListCount)
+		{
+			AudioPlayListPlaying.css({ 'color':'#ffffff', 'background':'#000000' });
+			AudioPlayListPlaying.text('play_arrow');
+			//
+			var NextBlock = $('.AudioPlayerBox .PlayList').find('a').find('i[audioid="'+aid+'"]');
+			AudioPlayListPlaying = NextBlock;
+			var url = NextBlock.attr('music');
+			var info = NextBlock.attr('info');
+			var audioID = NextBlock.attr('audioid');
+			APPlayUrl(url, info, audioID);
+			//
+			AudioPlayListPlaying.css({
+				'background': 'rgba(0, 0, 0, 0.2)',
+				'color': '#000000'
+			});
+			AudioPlayListPlaying.text('pause');
+			// scroll
+			var top = $('body,html').scrollTop();
+			var nextScroll = AudioPlayListPlaying.offset().top-80;
+			$('body,html').animate({ scrollTop:nextScroll }, '500');
+		}
+	});
+	
+	// Progress Bar
+	$('.AudioPlayerBox .controls .bar').on('click', function(e) 
+	{
+		var posY = $(this).offset().left-3;
+		var clickY = e.pageX - posY;
+		var width = $(this).width();
+		percentage = clickY / width * AudioPlayer[0].duration;
+		AudioPlayer[0].currentTime = percentage;
+	});
+
+	function APPlayUrl(url, info, audioid)
+	{
+		time_end = '';
+		AudioPlayID = audioid;
+		$('.AudioPlayerBox .controls').find('.bar').find('.loaded').css("width", '0%');
+		$('.AudioPlayerBox .info').find('text').text('00:00 - 00:00');
+		AudioPlayer[0].src = url;
+		AudioPlayer[0].play();
+		AudioPlayer[2] = true;
+		$('.AudioPlayerBox .bottom_controls').find('.bc_play_pause').find('i').text('pause');
+		$('.AudioPlayerBox .bottom_controls').find('.bc_play_pause').css({
+			'background': '#000000',
+			'color': '#ffffff'
+		});
+		//
+		$('.AudioPlayerBox .info').find('label').text(info);
+		//
+		$('.AudioPlayerBox .fixed').css('top', '0');
+		$('.AudioPlayerBox .bottom_controls').css('bottom', '0');
+		$('.AudioPlayerBox .PlayList').css({
+			'padding-bottom': '45px',
+			'top': '68px'
+		});
+		//
+		console.clear();
+	}
+	function APVolume(vol)
+	{
+		AudioPlayer[0].volume = vol;
+	}
+	
+	AudioPlayer[0].addEventListener('ended', function ()
+	{
+		AudioPlayer[0].currentTime = 0;
+		$('.AudioPlayerBox .controls').find('.bar').find('.current').css('width', '0%');
+		if(AudioPlayer[1] == true) 
+		{
+			AudioPlayer[0].play();
+		}
+		else
+		{
+			AudioPlayer[2] = false;
+			AudioPlayer[0].pause();
+			AudioPlayListPlaying.css({ 'color':'#ffffff', 'background':'#000000' });
+			AudioPlayListPlaying.text('play_arrow');
+			$('.AudioPlayerBox .bottom_controls').find('.bc_play_pause').find('i').text('play_arrow');
+			$('.AudioPlayerBox .bottom_controls').find('.bc_play_pause').css({
+				'background': 'rgba(0, 0, 0, 0.2)',
+				'color': '#000000'
+			});
+		}
+	});
+	
+	AudioPlayer[0].addEventListener('timeupdate', function()
+	{
+		var time = AudioPlayer[0].duration - AudioPlayer[0].currentTime;
+		var bar = AudioPlayer[0].currentTime / AudioPlayer[0].duration * 100;	
+		$('.AudioPlayerBox .controls').find('.bar').find('.current').css('width', bar +'%');
+		//
+		var loadedAudio = (AudioPlayer[0].buffered.end(0) / AudioPlayer[0].duration * 100);
+		$('.AudioPlayerBox .controls').find('.bar').find('.loaded').css("width", loadedAudio + '%');
+		//
+		var m = Math.floor(time / 60);
+		var s = Math.floor(time - (m * 60));
+		if(s < 10) s = '0' + s;
+		if(m < 10) m = '0' + m; 
+		$('.AudioPlayerBox .info').find('text').text(m +':'+ s + ' - ' + time_end);
+	});
+	AudioPlayer[0].addEventListener('durationchange', function (e) 
+	{
+		var time = AudioPlayer[0].duration - AudioPlayer[0].currentTime;
+		var m = Math.floor(time / 60);
+		var s = Math.floor(time - (m * 60));
+		if(s < 10) s = '0' + s;
+		if(m < 10) m = '0' + m; 
+		if(time_end == '') time_end = m +':'+ s;
+	});
+	
+	</script>
+</html>
