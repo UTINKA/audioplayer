@@ -47,6 +47,7 @@
 	//
 	window.onload = function() 
 	{
+		AudioPlayer[0].type = 'audio/mpeg';
 		LoadPlayList();
 	}
 	
@@ -123,6 +124,7 @@
 			$('.AudioPlayerBox .fixed').find('.controls').find('.bar').find('.loaded').css('height', '15px');
 			//
 			$('.AudioPlayerBox .fixed').find('a').find('i').css({'font-size': '50px','transform': 'rotate(180deg)'});
+			$('body,html').css('overflow','hidden');
 			FullScreenToggle = true;
 		}
 		else if(FullScreenToggle == true)
@@ -137,6 +139,7 @@
 			$('.AudioPlayerBox .fixed').find('.controls').find('.bar').find('.loaded').css('height', '8px');
 			//
 			$('.AudioPlayerBox .fixed').find('a').find('i').css({'font-size': '60px','transform': 'rotate(0deg)'});
+			$('body,html').css('overflow','visible');
 			FullScreenToggle = false;
 		}
 	}
@@ -265,6 +268,7 @@
 		AudioPlayID = audioid;
 		$('.AudioPlayerBox .controls').find('.bar').find('.loaded').css("width", '0%');
 		$('.AudioPlayerBox .info').find('text').text('00:00 - 00:00');
+		AudioPlayer[0].type = 'audio/mpeg';
 		AudioPlayer[0].src = url;
 		AudioPlayer[0].play();
 		AudioPlayer[2] = true;
