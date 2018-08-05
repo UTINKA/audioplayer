@@ -28,6 +28,7 @@
 						<div class="current"></div>
 					</div>
 				</div>
+				<a><i class="material-icons">keyboard_arrow_down</i></a>
 			</div>
 			<div class="PlayList">
 				<button>Refresh</button>
@@ -42,7 +43,7 @@
 		</div>
 	</body>
 	<script>
-	var AudioPlayer = [new Audio(''), false, false], AudioPlayList = [], AudioPlayListCount = 0, AudioPlayID, AudioPlayListPlaying, time_end = '';
+	var AudioPlayer = [new Audio(''), false, false], AudioPlayList = [], AudioPlayListCount = 0, AudioPlayID, AudioPlayListPlaying, time_end = '', FullScreenToggle = false;
 	//
 	window.onload = function() 
 	{
@@ -107,6 +108,39 @@
 			}
 		});
 	}
+	// full screen
+	function FullScreen()
+	{
+		if(FullScreenToggle == false)
+		{
+			$('.AudioPlayerBox .fixed').css({'height': 'auto','bottom': '40px'});
+			$('.AudioPlayerBox .fixed').find('.image').css({'width': 'auto','height': 'auto','top': '60px','left': '0','right': '0','bottom': '15px','background-size': 'auto'});
+			$('.AudioPlayerBox .fixed').find('.info').css('bottom','20px');
+			$('.AudioPlayerBox .fixed').find('.info').find('label').css({'top': '15px','left': '10px','right': '60px','bottom': '0'});
+			$('.AudioPlayerBox .fixed').find('.info').find('text').css({'right': '10px','bottom': '0','font-size': '15px'});
+			$('.AudioPlayerBox .fixed').find('.controls').find('.bar').css('height', '15px');
+			$('.AudioPlayerBox .fixed').find('.controls').find('.bar').find('.current').css('height', '15px');
+			$('.AudioPlayerBox .fixed').find('.controls').find('.bar').find('.loaded').css('height', '15px');
+			//
+			$('.AudioPlayerBox .fixed').find('a').find('i').css({'font-size': '50px','transform': 'rotate(180deg)'});
+			FullScreenToggle = true;
+		}
+		else if(FullScreenToggle == true)
+		{
+			$('.AudioPlayerBox .fixed').css({'height': '68px','bottom': 'unset'});
+			$('.AudioPlayerBox .fixed').find('.image').css({'width': '60px','height': '60px','top': '0','left': '0','right': '0','bottom': '8px','background-size': '80%'});
+			$('.AudioPlayerBox .fixed').find('.info').css('bottom','8px');
+			$('.AudioPlayerBox .fixed').find('.info').find('label').css({'top': '0','left': '60px','right': '60px','bottom': '0'});
+			$('.AudioPlayerBox .fixed').find('.info').find('text').css({'right': '65px','bottom': '0','font-size': '12px'});
+			$('.AudioPlayerBox .fixed').find('.controls').find('.bar').css('height', '8px');
+			$('.AudioPlayerBox .fixed').find('.controls').find('.bar').find('.current').css('height', '8px');
+			$('.AudioPlayerBox .fixed').find('.controls').find('.bar').find('.loaded').css('height', '8px');
+			//
+			$('.AudioPlayerBox .fixed').find('a').find('i').css({'font-size': '60px','transform': 'rotate(0deg)'});
+			FullScreenToggle = false;
+		}
+	}
+	$('.AudioPlayerBox .fixed').find('a').click(function(e){ FullScreen(); });
 	// Player
 	$('.AudioPlayerBox .bottom_controls').find('.bc_play_pause').click(function(e)
 	{

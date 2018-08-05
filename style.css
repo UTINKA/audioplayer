@@ -31,6 +31,19 @@ body{
 	transition: 0.5s;
 }
 
+.AudioPlayerBox .fixed a{
+	cursor: pointer;
+	display: block;
+    position: absolute;
+    right: 0;
+    height: 60px;
+    width: 60px;
+    text-align: center;
+	z-index: 5;
+	background-color: rgba(0, 0, 0, 0.1);
+}
+.AudioPlayerBox .fixed a i{ font-size: 60px; }
+
 .AudioPlayerBox .bottom_controls{
 	user-select: none;
 	position: fixed;
@@ -82,23 +95,26 @@ body{
     right: 0;
     left: 0;
     bottom: 8px;
+	transition: 0.5s;
 }
 .AudioPlayerBox .info label{
 	position: absolute;
     top: 0;
     left: 60px;
-    right: 0;
+    right: 60px;
     bottom: 0;
     padding: 10px;
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
+	transition: 0.5s;
 }
 .AudioPlayerBox .info text{
 	position: absolute;
-    left: 70px;
+	right: 65px;
     bottom: 0;
     font-size: 12px;
+	transition: 0.5s;
 }
 
 .AudioPlayerBox .controls{
@@ -117,7 +133,7 @@ body{
     left: 0;
     right: 0;
     height: 8px;
-    background: rgba(0, 0, 0, 0.1);
+    background: rgba(0, 0, 0, 0.2);
 }
 .AudioPlayerBox .controls .bar .current{
 	position: absolute;
