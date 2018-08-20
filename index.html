@@ -6,8 +6,8 @@
 	
 	<title>Audio Player</title>
 	
-	<link rel="stylesheet" href="https://utinka.github.io/materialdesignlib.github.io/css/font.css" type="text/css" />
-	<link rel="stylesheet" href="https://utinka.github.io/materialdesignlib.github.io/css/icons.css" type="text/css" />
+	<link rel="stylesheet" href="css/font.css" type="text/css" />
+	<link rel="stylesheet" href="css/icons.css" type="text/css" />
 		
 	<link rel="stylesheet" href="style.css">
 	
@@ -17,6 +17,7 @@
     <body>
 		<div class="AudioPlayerBox">
 			<div class="fixed">
+				<canvas class="visual" id="Visual"></canvas>
 				<div class="image"></div>
 				<div class="info">
 					<label></label>
@@ -43,14 +44,57 @@
 		</div>
 	</body>
 	<script>
-	var AudioPlayer = [new Audio(''), false, false], AudioPlayList = [], AudioPlayListCount = 0, AudioPlayID, AudioPlayListPlaying, time_end = '', FullScreenToggle = false;
+	var 
+		AudioPlayer = [new Audio(''), false, false], 
+		AudioPlayList = [], 
+		AudioPlayListCount = 0, 
+		AudioPlayID, 
+		AudioPlayListPlaying, 
+		time_end = '', 
+		FullScreenToggle = false,
+		analyser,
+		dataArray,
+		context,
+		src,
+		BoxVisual,
+		BoxVisual_ctx,
+		BVWIDTH,
+		BVHEIGHT,
+		BVbarWidth,
+		bufferLength
+	;
 	//
-	window.onload = function() 
+	$(document).ready(function()
 	{
 		AudioPlayer[0].type = 'audio/mpeg';
+		context = new AudioContext();
+		src = context.createMediaElementSource(AudioPlayer[0]);
+		//
+		analyser = context.createAnalyser();
+		src.connect(analyser);
+		analyser.connect(context.destination);
+		analyser.fftSize = 256;
+		bufferLength = analyser.frequencyBinCount;
+		console.log(bufferLength);
+		dataArray = new Uint8Array(bufferLength);
+		//
 		LoadPlayList();
-	}
+		// visual
+		BoxVisual = document.getElementById("Visual");
+		BoxVisual_ctx = BoxVisual.getContext("2d");
+		//
+		UpdateVisual();
+	});
 	
+	$(window).scroll(function() 
+	{
+		/*if(FullScreenToggle == false)
+		{
+			DocumentScroll = $('body,html').scrollTop();
+		}
+		console.log(DocumentScroll);*/
+	});
+
 	$('.AudioPlayerBox').find('.PlayList').find('button').click(function()
 	{
 		LoadPlayList();
@@ -124,7 +168,7 @@
 			$('.AudioPlayerBox .fixed').find('.controls').find('.bar').find('.loaded').css('height', '15px');
 			//
 			$('.AudioPlayerBox .fixed').find('a').find('i').css({'font-size': '50px','transform': 'rotate(180deg)'});
-			$('body,html').css('overflow','hidden');
+			$('body').css('overflow','hidden');
 			FullScreenToggle = true;
 		}
 		else if(FullScreenToggle == true)
@@ -139,7 +183,7 @@
 			$('.AudioPlayerBox .fixed').find('.controls').find('.bar').find('.loaded').css('height', '8px');
 			//
 			$('.AudioPlayerBox .fixed').find('a').find('i').css({'font-size': '60px','transform': 'rotate(0deg)'});
-			$('body,html').css('overflow','visible');
+			$('body').css('overflow','visible');
 			FullScreenToggle = false;
 		}
 	}
@@ -264,12 +308,14 @@
 
 	function APPlayUrl(url, info, audioid)
 	{
+		AudioPlayer[0].pause();
 		time_end = '';
 		AudioPlayID = audioid;
 		$('.AudioPlayerBox .controls').find('.bar').find('.loaded').css("width", '0%');
 		$('.AudioPlayerBox .info').find('text').text('00:00 - 00:00');
 		AudioPlayer[0].type = 'audio/mpeg';
 		AudioPlayer[0].src = url;
+		AudioPlayer[0].load();
 		AudioPlayer[0].play();
 		AudioPlayer[2] = true;
 		$('.AudioPlayerBox .bottom_controls').find('.bc_play_pause').find('i').text('pause');
@@ -287,7 +333,7 @@
 			'top': '68px'
 		});
 		//
-		console.clear();
+		//console.clear();
 	}
 	function APVolume(vol)
 	{
@@ -322,8 +368,11 @@
 		var bar = AudioPlayer[0].currentTime / AudioPlayer[0].duration * 100;	
 		$('.AudioPlayerBox .controls').find('.bar').find('.current').css('width', bar +'%');
 		//
-		var loadedAudio = (AudioPlayer[0].buffered.end(0) / AudioPlayer[0].duration * 100);
-		$('.AudioPlayerBox .controls').find('.bar').find('.loaded').css("width", loadedAudio + '%');
+		if(AudioPlayer[0].buffered.length != 0)
+		{
+			var loadedAudio = (AudioPlayer[0].buffered.end(0) / AudioPlayer[0].duration * 100);
+			$('.AudioPlayerBox .controls').find('.bar').find('.loaded').css("width", loadedAudio + '%');
+		}
 		//
 		var m = Math.floor(time / 60);
 		var s = Math.floor(time - (m * 60));
@@ -339,7 +388,56 @@
 		if(s < 10) s = '0' + s;
 		if(m < 10) m = '0' + m; 
 		if(time_end == '') time_end = m +':'+ s;
+		//
 	});
-	
+	// visual
+    var barHeight;
+    var x = 0;
+	//
+    var pbbarHeight;
+	function UpdateVisual() 
+	{
+		requestAnimationFrame(UpdateVisual);
+		analyser.getByteFrequencyData(dataArray);
+		//for(var i = 0; i < dataArray.length; i++) { console.log('dataArray['+ i +'] ('+ dataArray[i] +')'); }
+		
+		
+		BoxVisual.width = window.innerWidth;
+		BoxVisual.height = window.innerHeight;
+		//
+		BVWIDTH = BoxVisual.width;
+		BVHEIGHT = BoxVisual.height;
+		BVbarWidth = (BVWIDTH / bufferLength) * 2.5;
+		x = 0;
+		
+		BoxVisual_ctx.fillStyle = "#fff";
+		BoxVisual_ctx.fillRect(0, 0, BVWIDTH, BVHEIGHT);
+		for(var i = 0; i < bufferLength; i++) 
+		{
+			barHeight = dataArray[i];
+        
+			var r = barHeight + (25 * (i/bufferLength));
+			var g = 250 * (i/bufferLength);
+			var b = 50;
+
+			BoxVisual_ctx.fillStyle = "rgb(" + r + "," + g + "," + b + ")";
+			BoxVisual_ctx.fillRect(x, BVHEIGHT - barHeight, BVbarWidth, barHeight);
+
+			x += BVbarWidth + 1;
+		}
+		// progress bar current
+		for(var i = 0; i < dataArray.length; i++) 
+		{
+			pbbarHeight = dataArray[i];
+			if(pbbarHeight != 0)
+			{			
+				var r = pbbarHeight + (250 * (i/dataArray.length));
+				var g = 25 * (i/dataArray.length);
+				var b = 50 * (i/dataArray.length);
+				
+				$('.AudioPlayerBox .controls').find('.bar').find('.current').css('background', 'rgb('+r +',0,0)');
+			}			
+		}
+	}
 	</script>
 </html>

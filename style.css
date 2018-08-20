@@ -74,6 +74,17 @@ body{
 .AudioPlayerBox .bottom_controls a:hover{ background: rgba(0, 0, 0, 0.3); }
 .AudioPlayerBox .bottom_controls a:active{ background: rgba(0, 0, 0, 0.5); }
 
+.AudioPlayerBox .visual{
+	position: absolute;
+    top: 60px;
+    z-index: 0;
+    left: 0;
+    right: 0;
+    bottom: 15px;
+    width: 100%;
+    height: calc(100% - 75px);
+}
+
 .AudioPlayerBox .image{
 	position: absolute;
     width: 60px;
@@ -114,6 +125,11 @@ body{
 	right: 65px;
     bottom: 0;
     font-size: 12px;
+	
+	background: rgb(255, 255, 255);
+    padding: 5px 5px 1px;
+    border-radius: 5px;
+	
 	transition: 0.5s;
 }
 
