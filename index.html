@@ -32,8 +32,15 @@
 				<a><i class="material-icons">keyboard_arrow_down</i></a>
 			</div>
 			<div class="PlayList">
-				<button>Refresh</button>
-				
+				<div class="buttons_settings">
+					<button class="refresh">
+						<i class="material-icons">refresh</i>
+						<p>Refresh</p>
+					</button>
+					<button class="view_playlist">
+						<i class="material-icons">view_module</i>
+					</button>
+				</div>
 			</div>
 			<div class="bottom_controls">
 				<a class="bc_back"><i class="material-icons">skip_previous</i></a>
@@ -51,7 +58,11 @@
 		AudioPlayID, 
 		AudioPlayListPlaying, 
 		time_end = '', 
+		PlayListView = 0,
 		FullScreenToggle = false,
+		FullScreenToggleInFS = false,
+		PLS_State = true,
+		user_scroll_current = 0,
 		analyser,
 		dataArray,
 		context,
@@ -88,18 +99,52 @@
 	
 	$(window).scroll(function() 
 	{
-		/*if(FullScreenToggle == false)
+		var top_s = $(this).scrollTop();
+		console.log(top_s);
+		
+		var APF = $('.AudioPlayerBox').find('.fixed');
+		var PLS = $('.AudioPlayerBox').find('.PlayList').find('.buttons_settings');
+		
+		if(user_scroll_current > top_s)
 		{
-			DocumentScroll = $('body,html').scrollTop();
+			if(PLS_State == false)
+			{
+				if(APF.css('top') == '0px')
+				{
+					PLS.css({ 'position':'fixed', 'box-shadow': '0px 3px 5px rgba(0, 0, 0, 0.3)', 'top':'68px' });
+					PLS_State = true;
+				}
+				else if(APF.css('top') == '-68px')
+				{
+					PLS.css({ 'position':'fixed', 'box-shadow': '0px 3px 5px rgba(0, 0, 0, 0.3)', 'top':'0px' });
+					PLS_State = true;
+				}
+			}
 		}
-		console.log(DocumentScroll);*/
+		else if(top_s > user_scroll_current-10) 
+		{
+			if(PLS_State == true)
+			{
+				if(APF.css('top') == '0px')
+				{
+					PLS.css({ 'position':'fixed', 'top':'-10px' });	
+					PLS_State = false;
+				}
+				else if(APF.css('top') == '-68px')
+				{
+					PLS.css({ 'position':'fixed', 'top':'-68px' });	
+					PLS_State = false;
+				}
+			}
+		}
+		if(top_s < 5) PLS.css({ 'position':'unset', 'box-shadow': '0px 3px 5px rgba(0, 0, 0, 0)' });
+		//
+		user_scroll_current = $(this).scrollTop();
 	});
-
-	$('.AudioPlayerBox').find('.PlayList').find('button').click(function()
-	{
-		LoadPlayList();
-	});
-	
+	// play list buttons
+	$('.AudioPlayerBox').find('.PlayList').find('.refresh').click(function() { LoadPlayList(); });
+	$('.AudioPlayerBox').find('.PlayList').find('.view_playlist').click(function() { SetPlayListViews(); });
+	//
 	function LoadPlayList()
 	{
 		$.ajax(
@@ -122,7 +167,6 @@
 						label = label.replace('audios/',"");
 						label = label.replace('.mp3',"");
 						AudioPlayList[apl] = "http://test18.ru/Audio/" + AudioPlayList[apl];
-						
 						// Add In Play List
 						$('.AudioPlayerBox').find('.PlayList').append('<a><i class="material-icons" audioid="'+apl+'" music="'+AudioPlayList[apl]+'" info="'+label+'">play_arrow</i><label>'+label+'</label></a>');
 					}
@@ -131,10 +175,7 @@
 					{
 						if(AudioPlayListPlaying != undefined)
 						{
-							AudioPlayListPlaying.css({
-								'color':'#ffffff',
-								'background':'#000000'
-							});
+							AudioPlayListPlaying.css({ 'color':'#ffffff', 'background':'#000000' });
 							AudioPlayListPlaying.text('play_arrow');
 						}	
 						AudioPlayListPlaying = $(this);
@@ -142,49 +183,93 @@
 						var info = $(this).attr('info');
 						var audioID = $(this).attr('audioid');
 						APPlayUrl(url, info, audioID);
-						$(this).css({
-							'color':'#000000',
-							'background':'rgb(206, 206, 206)'
-						});
+						$(this).css({ 'color':'#000000', 'background':'rgb(206, 206, 206)' });
 						$(this).text('pause');
 					});
 				}
 				AudioPlayListCount = AudioPlayList.length-1;
+				// clear
+				PlayListView = 0;
+				$('.AudioPlayerBox .PlayList .view_playlist').find('i').text('view_module');
 			}
 		});
 	}
+	// PlayListView's
+	function SetPlayListViews()
+	{
+		if(PlayListView == 0)
+		{
+			$('.AudioPlayerBox .PlayList a').css({ 'display': 'inline-block', 'width': '300px' });
+			PlayListView = 1;
+			$('.AudioPlayerBox .PlayList .view_playlist').find('i').text('view_list');
+		}
+		else if(PlayListView == 1)
+		{
+			$('.AudioPlayerBox .PlayList a').css({ 'display': 'block', 'width': 'auto' });
+			PlayListView = 0;
+			$('.AudioPlayerBox .PlayList .view_playlist').find('i').text('view_module');
+		}
+	}
+	// fs full screen
+	$('.AudioPlayerBox .fixed').find('.image').dblclick(function(e)
+	{
+		if(FullScreenToggle == true)
+		{
+			if(FullScreenToggleInFS == false)
+			{
+				$('.AudioPlayerBox .fixed').css({ 'top':'-68px', 'bottom':'0px' });
+				$('.AudioPlayerBox .bottom_controls').css('bottom', '-40px');
+				$('.AudioPlayerBox .fixed').find('.info').find('label').css({ 'top':'78px', 'right':'10px' });
+				FullScreenToggleInFS = true;
+			}
+			else if(FullScreenToggleInFS == true)
+			{
+				$('.AudioPlayerBox .fixed').css({ 'top':'0px', 'bottom':'40px' });
+				$('.AudioPlayerBox .bottom_controls').css('bottom', '0px');
+				$('.AudioPlayerBox .fixed').find('.info').find('label').css({ 'top':'15px', 'right':'60px' });
+				FullScreenToggleInFS = false;
+			}
+		}
+	});
 	// full screen
 	function FullScreen()
 	{
 		if(FullScreenToggle == false)
 		{
-			$('.AudioPlayerBox .fixed').css({'height': 'auto','bottom': '40px'});
-			$('.AudioPlayerBox .fixed').find('.image').css({'width': 'auto','height': 'auto','top': '60px','left': '0','right': '0','bottom': '15px','background-size': 'auto'});
-			$('.AudioPlayerBox .fixed').find('.info').css('bottom','20px');
-			$('.AudioPlayerBox .fixed').find('.info').find('label').css({'top': '15px','left': '10px','right': '60px','bottom': '0'});
-			$('.AudioPlayerBox .fixed').find('.info').find('text').css({'right': '10px','bottom': '0','font-size': '15px'});
+			$('.AudioPlayerBox .fixed').css({ 'height': 'auto','bottom': '40px'});
+			$('.AudioPlayerBox .fixed').find('.image').css({ 'width':'auto', 'height':'auto', 'top':'60px', 'left':'0', 'right':'0', 'bottom':'15px', 'background-size':'auto' });
+			$('.AudioPlayerBox .fixed').find('.info').css('bottom', '20px');
+			$('.AudioPlayerBox .fixed').find('.info').find('label').css({ 'top':'15px', 'left':'10px', 'right':'60px', 'bottom':'0' });
+			$('.AudioPlayerBox .fixed').find('.info').find('text').css({ 'right':'10px', 'bottom':'0', 'font-size':'15px' });
 			$('.AudioPlayerBox .fixed').find('.controls').find('.bar').css('height', '15px');
 			$('.AudioPlayerBox .fixed').find('.controls').find('.bar').find('.current').css('height', '15px');
 			$('.AudioPlayerBox .fixed').find('.controls').find('.bar').find('.loaded').css('height', '15px');
 			//
-			$('.AudioPlayerBox .fixed').find('a').find('i').css({'font-size': '50px','transform': 'rotate(180deg)'});
+			$('.AudioPlayerBox .fixed').find('a').find('i').css({ 'font-size':'50px', 'transform':'rotate(180deg)' });
 			$('body').css('overflow','hidden');
 			FullScreenToggle = true;
 		}
 		else if(FullScreenToggle == true)
 		{
-			$('.AudioPlayerBox .fixed').css({'height': '68px','bottom': 'unset'});
-			$('.AudioPlayerBox .fixed').find('.image').css({'width': '60px','height': '60px','top': '0','left': '0','right': '0','bottom': '8px','background-size': '80%'});
-			$('.AudioPlayerBox .fixed').find('.info').css('bottom','8px');
-			$('.AudioPlayerBox .fixed').find('.info').find('label').css({'top': '0','left': '60px','right': '60px','bottom': '0'});
-			$('.AudioPlayerBox .fixed').find('.info').find('text').css({'right': '65px','bottom': '0','font-size': '12px'});
+			$('.AudioPlayerBox .fixed').css({ 'height': '68px','bottom': 'unset'});
+			$('.AudioPlayerBox .fixed').find('.image').css({ 'width': '60px', 'height':'60px', 'top':'0', 'left':'0', 'right':'0', 'bottom':'8px', 'background-size':'80%' });
+			$('.AudioPlayerBox .fixed').find('.info').css('bottom', '8px');
+			$('.AudioPlayerBox .fixed').find('.info').find('label').css({ 'top':'0', 'left':'60px', 'right':'60px', 'bottom':'0' });
+			$('.AudioPlayerBox .fixed').find('.info').find('text').css({ 'right':'65px', 'bottom':'0', 'font-size':'12px' });
 			$('.AudioPlayerBox .fixed').find('.controls').find('.bar').css('height', '8px');
 			$('.AudioPlayerBox .fixed').find('.controls').find('.bar').find('.current').css('height', '8px');
 			$('.AudioPlayerBox .fixed').find('.controls').find('.bar').find('.loaded').css('height', '8px');
 			//
-			$('.AudioPlayerBox .fixed').find('a').find('i').css({'font-size': '60px','transform': 'rotate(0deg)'});
+			$('.AudioPlayerBox .fixed').find('a').find('i').css({ 'font-size':'60px', 'transform':'rotate(0deg)' });
 			$('body').css('overflow','visible');
 			FullScreenToggle = false;
+			if(FullScreenToggleInFS == true)
+			{
+				$('.AudioPlayerBox .fixed').css({ 'top':'0px', 'bottom':'40px' });
+				$('.AudioPlayerBox .bottom_controls').css('bottom', '0px');
+				$('.AudioPlayerBox .fixed').find('.info').find('label').css('top', '15px');
+				FullScreenToggleInFS = false;
+			}
 		}
 	}
 	$('.AudioPlayerBox .fixed').find('a').click(function(e){ FullScreen(); });
@@ -199,11 +284,8 @@
 				AudioPlayer[0].play();
 				$('.AudioPlayerBox .bottom_controls').find('.bc_play_pause').find('i').text('pause');
 				AudioPlayListPlaying.text('pause');
-				AudioPlayListPlaying.css({ 'color':'#000000','background':'rgb(206, 206, 206)' });
-				$('.AudioPlayerBox .bottom_controls').find('.bc_play_pause').css({
-					'background': '#000000',
-					'color': '#ffffff'
-				});
+				AudioPlayListPlaying.css({ 'color':'#000000', 'background':'rgb(206, 206, 206)' });
+				$('.AudioPlayerBox .bottom_controls').find('.bc_play_pause').css({ 'background':'#000000', 'color':'#ffffff' });
 			}
 			else
 			{
@@ -212,10 +294,7 @@
 				$('.AudioPlayerBox .bottom_controls').find('.bc_play_pause').find('i').text('play_arrow');
 				AudioPlayListPlaying.text('play_arrow');
 				AudioPlayListPlaying.css({ 'color':'#ffffff', 'background':'#000000' });
-				$('.AudioPlayerBox .bottom_controls').find('.bc_play_pause').css({
-					'background': 'rgba(0, 0, 0, 0.2)',
-					'color': '#000000'
-				});
+				$('.AudioPlayerBox .bottom_controls').find('.bc_play_pause').css({ 'background':'rgba(0, 0, 0, 0.2)', 'color':'#000000' });
 			}
 		}
 	});
@@ -224,18 +303,12 @@
 		if(AudioPlayer[1] == false)
 		{
 			AudioPlayer[1] = true;
-			$(this).css({
-				'background': '#000000',
-				'color': '#ffffff'
-			});
+			$(this).css({ 'background':'#000000', 'color':'#ffffff' });
 		}
 		else
 		{
 			AudioPlayer[1] = false;
-			$(this).css({
-				'background': 'rgba(0, 0, 0, 0.2)',
-				'color': '#000000'
-			});
+			$(this).css({ 'background':'rgba(0, 0, 0, 0.2)', 'color':'#000000' });
 		}
 	});
 	// Audio skip
@@ -256,15 +329,12 @@
 			var audioID = NextBlock.attr('audioid');
 			APPlayUrl(url, info, audioID);
 			//
-			AudioPlayListPlaying.css({
-				'background': 'rgba(0, 0, 0, 0.2)',
-				'color': '#000000'
-			});
+			AudioPlayListPlaying.css({ 'background':'rgba(0, 0, 0, 0.2)', 'color':'#000000' });
 			AudioPlayListPlaying.text('pause');
-			// scroll down
+			/* scroll down
 			var top = $('body,html').scrollTop();
 			var nextScroll = AudioPlayListPlaying.offset().top-80;
-			$('body,html').animate({ scrollTop:nextScroll }, '500');
+			$('body,html').animate({ scrollTop:nextScroll }, '500');*/
 		}
 	});
 	// next
@@ -284,15 +354,12 @@
 			var audioID = NextBlock.attr('audioid');
 			APPlayUrl(url, info, audioID);
 			//
-			AudioPlayListPlaying.css({
-				'background': 'rgba(0, 0, 0, 0.2)',
-				'color': '#000000'
-			});
+			AudioPlayListPlaying.css({ 'background':'rgba(0, 0, 0, 0.2)', 'color':'#000000' });
 			AudioPlayListPlaying.text('pause');
-			// scroll
+			/* scroll up
 			var top = $('body,html').scrollTop();
 			var nextScroll = AudioPlayListPlaying.offset().top-80;
-			$('body,html').animate({ scrollTop:nextScroll }, '500');
+			$('body,html').animate({ scrollTop:nextScroll }, '500');*/
 		}
 	});
 	
@@ -319,21 +386,13 @@
 		AudioPlayer[0].play();
 		AudioPlayer[2] = true;
 		$('.AudioPlayerBox .bottom_controls').find('.bc_play_pause').find('i').text('pause');
-		$('.AudioPlayerBox .bottom_controls').find('.bc_play_pause').css({
-			'background': '#000000',
-			'color': '#ffffff'
-		});
+		$('.AudioPlayerBox .bottom_controls').find('.bc_play_pause').css({ 'background':'#000000', 'color':'#ffffff' });
 		//
 		$('.AudioPlayerBox .info').find('label').text(info);
 		//
 		$('.AudioPlayerBox .fixed').css('top', '0');
 		$('.AudioPlayerBox .bottom_controls').css('bottom', '0');
-		$('.AudioPlayerBox .PlayList').css({
-			'padding-bottom': '45px',
-			'top': '68px'
-		});
-		//
-		//console.clear();
+		$('.AudioPlayerBox .PlayList').css({ 'padding-bottom':'45px', 'top':'68px' });
 	}
 	function APVolume(vol)
 	{
@@ -344,10 +403,7 @@
 	{
 		AudioPlayer[0].currentTime = 0;
 		$('.AudioPlayerBox .controls').find('.bar').find('.current').css('width', '0%');
-		if(AudioPlayer[1] == true) 
-		{
-			AudioPlayer[0].play();
-		}
+		if(AudioPlayer[1] == true) AudioPlayer[0].play();
 		else
 		{
 			AudioPlayer[2] = false;
@@ -355,10 +411,7 @@
 			AudioPlayListPlaying.css({ 'color':'#ffffff', 'background':'#000000' });
 			AudioPlayListPlaying.text('play_arrow');
 			$('.AudioPlayerBox .bottom_controls').find('.bc_play_pause').find('i').text('play_arrow');
-			$('.AudioPlayerBox .bottom_controls').find('.bc_play_pause').css({
-				'background': 'rgba(0, 0, 0, 0.2)',
-				'color': '#000000'
-			});
+			$('.AudioPlayerBox .bottom_controls').find('.bc_play_pause').css({ 'background':'rgba(0, 0, 0, 0.2)', 'color':'#000000' });
 		}
 	});
 	
@@ -378,7 +431,7 @@
 		var s = Math.floor(time - (m * 60));
 		if(s < 10) s = '0' + s;
 		if(m < 10) m = '0' + m; 
-		$('.AudioPlayerBox .info').find('text').text(m +':'+ s + ' - ' + time_end);
+		$('.AudioPlayerBox .info').find('text').text(m + ':' + s + ' - ' + time_end);
 	});
 	AudioPlayer[0].addEventListener('durationchange', function (e) 
 	{
@@ -387,7 +440,7 @@
 		var s = Math.floor(time - (m * 60));
 		if(s < 10) s = '0' + s;
 		if(m < 10) m = '0' + m; 
-		if(time_end == '') time_end = m +':'+ s;
+		if(time_end == '') time_end = m + ':' + s;
 		//
 	});
 	// visual
@@ -400,7 +453,6 @@
 		requestAnimationFrame(UpdateVisual);
 		analyser.getByteFrequencyData(dataArray);
 		//for(var i = 0; i < dataArray.length; i++) { console.log('dataArray['+ i +'] ('+ dataArray[i] +')'); }
-		
 		
 		BoxVisual.width = window.innerWidth;
 		BoxVisual.height = window.innerHeight;
@@ -416,28 +468,33 @@
 		{
 			barHeight = dataArray[i];
         
-			var r = barHeight + (25 * (i/bufferLength));
-			var g = 250 * (i/bufferLength);
-			var b = 50;
-
-			BoxVisual_ctx.fillStyle = "rgb(" + r + "," + g + "," + b + ")";
+			/*var r = barHeight + (25 * (i/bufferLength));
+			var g = 5 * (i/bufferLength);
+			var b = 200 * (i/barHeight);*/
+			//
+			var r = barHeight + (1 * (i/bufferLength));
+			var g = barHeight + (1 * (i/bufferLength));
+			var b = barHeight + (1 * (i/bufferLength));
+			
+			r = r-50;
+			g = g-50;
+			b = b-50;
+			BoxVisual_ctx.fillStyle = "rgb("+ r +","+ g +","+ b +")";
+			//BoxVisual_ctx.fillStyle = "rgb(218, 218, 218)";
 			BoxVisual_ctx.fillRect(x, BVHEIGHT - barHeight, BVbarWidth, barHeight);
 
 			x += BVbarWidth + 1;
 		}
 		// progress bar current
-		for(var i = 0; i < dataArray.length; i++) 
+		/*for(var i = 0; i < dataArray.length; i++) 
 		{
 			pbbarHeight = dataArray[i];
 			if(pbbarHeight != 0)
 			{			
 				var r = pbbarHeight + (250 * (i/dataArray.length));
-				var g = 25 * (i/dataArray.length);
-				var b = 50 * (i/dataArray.length);
-				
-				$('.AudioPlayerBox .controls').find('.bar').find('.current').css('background', 'rgb('+r +',0,0)');
+				$('.AudioPlayerBox .controls').find('.bar').find('.current').css('background', 'rgb('+ r +',0,0)');
 			}			
-		}
+		}*/
 	}
 	</script>
 </html>
